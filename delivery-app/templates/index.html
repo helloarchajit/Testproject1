@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚚 Delivery App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1>🚚 Delivery App</h1>
+                    <nav class="nav">
+                        <button class="nav-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+                        <button class="nav-btn" onclick="switchTab('orders')">Orders</button>
+                        <button class="nav-btn" onclick="switchTab('drivers')">Drivers</button>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Orders</div>
+                            <div class="stat-value">{{ total_orders }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pending Orders</div>
+                            <div class="stat-value">{{ pending_orders }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Delivered</div>
+                            <div class="stat-value">{{ delivered_orders }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Available Drivers</div>
+                            <div class="stat-value">{{ available_drivers }}</div>
+                        </div>
+                    </div>
+
+                    <div class="recent-section">
+                        <h2>Recent Orders</h2>
+                        <div class="order-list" id="recentOrders">
+                            {% for order in orders %}
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div>
+                                        <h3>{{ order.customer_name }}</h3>
+                                        <p class="order-id">Order #{{ order.id }}</p>
+                                    </div>
+                                    <span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span>
+                                </div>
+                                <div class="order-body">
+                                    <p>📍 {{ order.pickup_address }}</p>
+                                    <p>→ {{ order.delivery_address }}</p>
+                                </div>
+                                <div class="order-footer">
+                                    <span class="price">${{ order.total_price }}</span>
+                                    <span class="items">{{ order.items }} items</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div id="orders" class="tab">
+                    <div class="tab-header">
+                        <h2>Orders Management</h2>
+                        <button class="btn btn-primary" onclick="showOrderForm()">+ New Order</button>
+                    </div>
+
+                    <div class="order-grid" id="ordersList">
+                        {% for order in orders %}
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div>
+                                    <h3>{{ order.customer_name }}</h3>
+                                    <p class="order-id">Order #{{ order.id }}</p>
+                                </div>
+                                <span class="status-badge status-{{ order.status }}">{{ order.status|title }}</span>
+                            </div>
+                            <div class="order-body">
+                                <p>📍 {{ order.pickup_address }}</p>
+                                <p>→ {{ order.delivery_address }}</p>
+                            </div>
+                            <div class="order-footer">
+                                <span class="price">${{ order.total_price }}</span>
+                                {% if order.status == 'pending' %}
+                                <button class="btn btn-small" onclick="assignDriver({{ order.id }})">Assign Driver</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Drivers Tab -->
+                <div id="drivers" class="tab">
+                    <div class="tab-header">
+                        <h2>Drivers Management</h2>
+                        <button class="btn btn-primary" onclick="showDriverForm()">+ Add Driver</button>
+                    </div>
+
+                    <div class="driver-grid" id="driversList">
+                        {% for driver in drivers %}
+                        <div class="driver-card">
+                            <div class="driver-header">
+                                <div>
+                                    <h3>{{ driver.name }}</h3>
+                                    <p class="vehicle">{{ driver.vehicle }}</p>
+                                </div>
+                                <span class="status-badge status-{{ driver.status }}">{{ driver.status|title }}</span>
+                            </div>
+                            <div class="driver-body">
+                                <p>📞 {{ driver.phone }}</p>
+                                <p>⭐ {{ driver.rating }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals -->
+        <div id="orderModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeOrderForm()">&times;</span>
+                <h2>Create New Order</h2>
+                <form id="orderForm">
+                    <input type="text" placeholder="Customer Name" id="customerName" required>
+                    <input type="text" placeholder="Pickup Address" id="pickupAddress" required>
+                    <input type="text" placeholder="Delivery Address" id="deliveryAddress" required>
+                    <input type="number" placeholder="Total Price" id="totalPrice" step="0.01" required>
+                    <button type="submit" class="btn btn-primary">Create Order</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="driverModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDriverForm()">&times;</span>
+                <h2>Add Driver</h2>
+                <form id="driverForm">
+                    <input type="text" placeholder="Driver Name" id="driverName" required>
+                    <input type="tel" placeholder="Phone Number" id="driverPhone" required>
+                    <input type="text" placeholder="Vehicle Type" id="vehicleType" required>
+                    <button type="submit" class="btn btn-primary">Add Driver</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="assignModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeAssignForm()">&times;</span>
+                <h2>Assign Driver</h2>
+                <div id="availableDrivers"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
